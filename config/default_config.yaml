@@ -1,0 +1,303 @@
+# UltraTrader Configuration
+# Institutional-grade quantitative trading system
+
+# Environment Configuration
+environment:
+  max_steps: 500
+  observation_dim: 200
+  action_dim: 2
+  exposure_max: 0.6
+  initial_equity: 1.0
+
+  # Transaction Costs
+  commission: 0.0005  # 5 bps
+  slippage_base: 0.0005  # 5 bps base
+  slippage_impact: 1.0  # linear impact multiplier
+
+  # Reward Shaping Weights
+  reward_weights:
+    profit: 80.0
+    hold: 80.0
+    drawdown: 35.0
+    leverage: 2.0
+    equity_improve: 10.0
+    risk_adjusted: 5.0
+
+  # Risk Limits
+  risk_limits:
+    max_drawdown: 0.20  # 20% max drawdown
+    max_position: 0.60  # 60% max position
+    min_liquidity: 0.05  # minimum liquidity threshold
+    var_limit_95: 0.10  # 10% VaR at 95% confidence
+    var_limit_99: 0.15  # 15% VaR at 99% confidence
+
+# Market Simulator Configuration
+market_simulator:
+  # Agent Flow Parameters
+  retail:
+    rho: 0.85  # AR(1) coefficient
+    sigma: 0.25  # noise magnitude
+    clip_range: [-1.0, 1.0]
+
+  small_inst:
+    rho: 0.90
+    sigma: 0.15
+    clip_range: [-1.0, 1.0]
+
+  big_inst:
+    rho: 0.95
+    sigma: 0.08
+    clip_range: [-1.0, 1.0]
+
+  liquidity:
+    rho: 0.92
+    sigma: 0.05
+    shock_prob: 0.02
+    shock_magnitude: 0.5
+    clip_range: [0.05, 1.0]
+
+  # Price Impact Parameters
+  price_impact:
+    base_noise: 0.001  # 0.1% base volatility
+    drift_big: 0.0020
+    drift_small: 0.0010
+    drift_retail: -0.0015
+    dump_threshold_retail: 0.8
+    dump_threshold_inst: -0.3
+    dump_magnitude: -0.0040
+
+# Expert Ensemble Configuration
+expert_ensemble:
+  lookback: 20
+  num_experts: 30
+  output_dim: 60
+
+  # Expert Categories
+  categories:
+    technical: 5
+    macro: 5
+    behavioral: 4
+    risk: 4
+    structural: 12
+
+  # Feature Engineering
+  feature_normalization: true
+  feature_scaling: "minmax"  # or "standard"
+
+# SAC Training Configuration
+training:
+  # Core Hyperparameters
+  learning_rate: 0.0003
+  buffer_size: 200000
+  batch_size: 256
+  tau: 0.005
+  gamma: 0.995
+  train_freq: 1
+  gradient_steps: 1
+
+  # Exploration
+  ent_coef: "auto_0.2"
+
+  # Network Architecture
+  policy_network:
+    hidden_layers: [256, 256]
+    activation: "relu"
+
+  value_network:
+    hidden_layers: [256, 256]
+    activation: "relu"
+
+  # Training Schedule
+  total_timesteps: 100000
+  eval_freq: 2000
+  checkpoint_freq: 5000
+  n_eval_episodes: 5
+
+  # Device
+  device: "auto"  # "cuda", "cpu", or "auto"
+
+  # Regularization
+  l2_reg: 0.0001
+  gradient_clip: 10.0
+
+# Evaluation Configuration
+evaluation:
+  # Episode Settings
+  num_episodes: 10
+  deterministic: true
+
+  # Multi-seed Robustness
+  seeds: [11, 22, 33, 44, 55, 66, 77, 88, 99, 111]
+  episodes_per_seed: 5
+
+  # Metrics to Compute
+  metrics:
+    - sharpe_ratio
+    - sortino_ratio
+    - calmar_ratio
+    - max_drawdown
+    - var_95
+    - cvar_95
+    - var_99
+    - cvar_99
+    - win_rate
+    - profit_factor
+    - avg_trade_duration
+    - kelly_fraction
+    - information_ratio
+
+  # Performance Benchmarks
+  benchmarks:
+    min_sharpe: 1.0
+    min_sortino: 1.2
+    min_calmar: 0.5
+    max_drawdown: 0.25
+
+# Backtesting Configuration
+backtesting:
+  # Walk-Forward Analysis
+  walk_forward:
+    enabled: true
+    train_window: 60  # days
+    test_window: 20   # days
+    step_size: 10     # days to step forward
+
+  # Monte Carlo Simulation
+  monte_carlo:
+    enabled: true
+    num_simulations: 1000
+    confidence_levels: [0.90, 0.95, 0.99]
+
+  # Slippage Models
+  slippage_model: "square_root"  # "linear", "square_root", or "adaptive"
+
+# Risk Management Configuration
+risk_management:
+  # Value at Risk
+  var:
+    method: "historical"  # "historical", "parametric", or "monte_carlo"
+    confidence_levels: [0.95, 0.99]
+    lookback_window: 252
+
+  # Position Sizing
+  position_sizing:
+    method: "kelly"  # "fixed", "kelly", "optimal_f", or "risk_parity"
+    kelly_fraction: 0.25  # fractional Kelly
+    max_leverage: 1.0
+
+  # Stop Loss / Take Profit
+  stop_loss:
+    enabled: true
+    type: "trailing"  # "fixed", "trailing", or "atr"
+    threshold: 0.05  # 5%
+
+  take_profit:
+    enabled: true
+    threshold: 0.15  # 15%
+
+  # Dynamic Risk Adjustment
+  dynamic_adjustment:
+    enabled: true
+    scale_by_volatility: true
+    scale_by_drawdown: true
+    scale_by_market_regime: true
+
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "json"  # "json" or "text"
+
+  # Output Destinations
+  console: true
+  file: true
+  tensorboard: true
+  mlflow: true
+
+  # Log Files
+  log_dir: "logs"
+  log_file: "ultratrader.log"
+  max_size_mb: 100
+  backup_count: 5
+
+  # Metrics Tracking
+  track_every_n_steps: 100
+  log_gradients: false
+  log_weights: false
+
+# MLflow Configuration
+mlflow:
+  enabled: true
+  tracking_uri: "file:./mlruns"
+  experiment_name: "UltraTrader"
+
+  # Auto-logging
+  autolog: true
+  log_models: true
+  log_artifacts: true
+
+  # Tags
+  default_tags:
+    project: "UltraTrader"
+    team: "quant"
+
+# Data Pipeline Configuration
+data:
+  # Data Sources
+  sources:
+    - type: "synthetic"  # "synthetic", "csv", "api", or "database"
+      enabled: true
+
+  # Data Preprocessing
+  preprocessing:
+    outlier_detection: true
+    outlier_method: "iqr"  # "iqr", "zscore", or "isolation_forest"
+    outlier_threshold: 3.0
+
+    missing_value_handling: "forward_fill"  # "forward_fill", "interpolate", or "drop"
+
+    feature_engineering:
+      technical_indicators: true
+      market_microstructure: true
+      sentiment_features: true
+
+  # Data Validation
+  validation:
+    check_nans: true
+    check_infs: true
+    check_stationarity: true
+
+# Model Versioning Configuration
+versioning:
+  enabled: true
+  registry: "local"  # "local" or "mlflow"
+
+  # Model Metadata
+  save_hyperparameters: true
+  save_metrics: true
+  save_artifacts: true
+
+  # Model Promotion
+  auto_promote_best: true
+  promotion_metric: "sharpe_ratio"
+
+# Deployment Configuration
+deployment:
+  mode: "batch"  # "batch" or "online"
+
+  # Model Serving
+  serving:
+    enabled: false
+    port: 8000
+    workers: 4
+
+  # Monitoring
+  monitoring:
+    enabled: true
+    alert_on_drift: true
+    drift_threshold: 0.1
+
+  # Safety Checks
+  safety:
+    require_validation: true
+    max_position_size: 0.6
+    circuit_breaker_drawdown: 0.30

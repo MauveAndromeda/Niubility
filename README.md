@@ -1,22 +1,54 @@
 # UltraTrader: Institutional-Grade RL Trading System
 
-**Multi-agent market simulation with 30+ expert ensemble and risk-aware reward shaping**
+**Production-ready quantitative trading system with advanced risk management, MLflow tracking, and enterprise deployment**
 
 [![Tests](https://img.shields.io/badge/tests-6%2F6%20passing-brightgreen)]()
-[![Python](https://img.shields.io/badge/python-3.13-blue)]()
+[![Python](https://img.shields.io/badge/python-3.10+-blue)]()
 [![Framework](https://img.shields.io/badge/RL-Stable--Baselines3-orange)]()
+[![Docker](https://img.shields.io/badge/docker-enabled-blue)]()
+[![License](https://img.shields.io/badge/license-MIT-green)]()
 
 ## 🎯 Overview
 
-UltraTrader is an institutional-grade reinforcement learning trading system that models realistic market microstructure through multi-agent simulation. Unlike toy environments with simple random noise, UltraTrader simulates **4 distinct market participant cohorts** (retail, small funds, large institutions, market makers) and aggregates signals from **30+ specialized trading experts**.
+UltraTrader is a **quantitative organization-level** reinforcement learning trading system designed for institutional deployment. It combines sophisticated market microstructure modeling with enterprise-grade infrastructure including advanced risk management, comprehensive performance analytics, production logging, and MLflow experiment tracking.
+
+Unlike academic RL trading demos, UltraTrader provides:
+
+- **Institutional-grade risk management** with VaR, CVaR, Kelly criterion position sizing
+- **Enterprise logging** with structured JSON logs and multi-destination output
+- **MLflow integration** for experiment tracking and model versioning
+- **Production deployment** via Docker with GPU support
+- **PM-grade analytics** including Sharpe, Sortino, Calmar, Information Ratio
+- **Configuration management** with YAML configs and environment overrides
 
 ### Key Features
 
+#### Trading System
 - **Multi-Agent Market Simulator**: Stateful AR(1) dynamics modeling retail sentiment, institutional flows, and liquidity stress
 - **30+ Expert Ensemble**: Technical, macro, behavioral, risk, and arbitrage signals across 5 categories
 - **Institutional Reward Shaping**: PM-style objective encouraging profitable conviction trades (not "do nothing")
-- **Risk-Aware Evaluation**: Max drawdown, Sharpe-like ratios, multi-seed robustness analysis
-- **Production Ready**: Fully tested, documented, backwards compatible with Stable-Baselines3 SAC
+- **Advanced Position Sizing**: Kelly criterion, risk parity, and dynamic adjustment based on market regime
+
+#### Risk Management
+- **Value at Risk (VaR)**: Historical, parametric, and Monte Carlo VaR at 95% and 99% confidence
+- **Conditional VaR (CVaR)**: Expected shortfall in tail scenarios
+- **Dynamic Risk Limits**: Position limits, drawdown limits, VaR limits with real-time monitoring
+- **Stop-Loss & Take-Profit**: Configurable risk controls with trailing stops
+- **Kelly Criterion**: Optimal position sizing based on edge and odds
+
+#### Performance Analytics
+- **Risk-Adjusted Metrics**: Sharpe, Sortino, Calmar, Information Ratio
+- **Tail Risk Analysis**: VaR/CVaR at multiple confidence levels
+- **Trade Analytics**: Win rate, profit factor, average trade duration
+- **Transaction Cost Analysis**: Commission and slippage tracking
+- **Rolling Metrics**: Time-series analysis of risk and performance
+
+#### Infrastructure
+- **Configuration Management**: YAML-based configs with environment variable overrides
+- **Production Logging**: JSON and text formats with rotating file handlers
+- **MLflow Integration**: Automatic experiment tracking and model registry
+- **Docker Deployment**: Multi-stage builds with GPU support
+- **Model Versioning**: Automatic model promotion based on performance metrics
 
 ## 🏗️ Architecture
 
@@ -65,32 +97,188 @@ pip install -r requirements_ultra.txt
 
 ## 🚀 Quick Start
 
-### Train Agent
+### Basic Usage
+
+#### Train Agent
 
 ```bash
-# Default: 20,000 steps
+# Default: 100,000 steps with auto GPU detection
 python train_ultra.py
 
-# Custom configuration
-set ULTRA_STEPS=50000
-set ULTRA_SEED=456
+# Custom configuration via environment variables
+export ULTRA_TRAINING_TIMESTEPS=50000
+export ULTRA_TRAINING_DEVICE=cuda
+export ULTRA_SEED=456
 python train_ultra.py
 ```
 
-### Evaluate Performance
+#### Evaluate Performance
 
 ```bash
-# Single evaluation with risk metrics
+# Single evaluation with comprehensive metrics
 python eval_ultra.py
 
 # Multi-seed robustness analysis
 python seedeval.py
 ```
 
-### Run Tests
+#### Run Tests
 
 ```bash
 pytest test_ultra.py -v
+
+# With coverage
+pytest --cov=. test_ultra.py
+```
+
+### Docker Deployment
+
+#### Build and Run with Docker Compose
+
+```bash
+# Build image
+docker-compose build
+
+# Train model
+docker-compose up ultratrader-train
+
+# Evaluate model
+docker-compose up ultratrader-eval
+
+# Run multi-seed evaluation
+docker-compose up ultratrader-seedeval
+
+# Start MLflow UI (optional)
+docker-compose up mlflow
+
+# Start Tensorboard (optional)
+docker-compose up tensorboard
+```
+
+#### Standalone Docker Usage
+
+```bash
+# Build image
+docker build -t ultratrader:latest .
+
+# Train with GPU support
+docker run --gpus all -v $(pwd)/checkpoints:/app/checkpoints ultratrader:latest
+
+# Evaluate
+docker run -v $(pwd)/checkpoints:/app/checkpoints \
+           -v $(pwd)/reports:/app/reports \
+           ultratrader:latest python eval_ultra.py
+```
+
+### Configuration Management
+
+UltraTrader uses YAML-based configuration with environment variable overrides:
+
+```python
+from config_manager import ConfigManager
+
+# Load configuration
+config = ConfigManager.load("config/default_config.yaml")
+
+# Access typed configuration
+learning_rate = config.training.learning_rate
+max_drawdown = config.environment.risk_limits["max_drawdown"]
+
+# Get nested values with dot notation
+gamma = config.get("training.gamma", default=0.99)
+```
+
+Environment variable overrides:
+```bash
+export ULTRA_TRAINING_LEARNING_RATE=0.0001
+export ULTRA_ENV_MAX_STEPS=1000
+export ULTRA_LOG_LEVEL=DEBUG
+```
+
+### Risk Management
+
+```python
+from risk_manager import RiskManager, RiskMetrics
+
+# Initialize risk manager
+risk_mgr = RiskManager(config={
+    "max_position": 0.6,
+    "max_drawdown": 0.20,
+    "position_sizing": {"method": "kelly", "kelly_fraction": 0.25}
+})
+
+# Update with trading data
+risk_mgr.update_state(equity=1.05, pnl=0.002)
+
+# Check risk limits
+is_valid, msg = risk_mgr.check_position_limits(position_size=0.5)
+
+# Get optimal position size
+optimal_size = risk_mgr.calculate_optimal_position_size(
+    signal_direction=0.8,
+    current_volatility=1.2
+)
+
+# Get comprehensive risk summary
+summary = risk_mgr.get_risk_summary()
+print(f"VaR(95%): {summary['var_95']:.2%}")
+print(f"Sharpe: {summary['sharpe_ratio']:.2f}")
+```
+
+### Performance Analytics
+
+```python
+from performance_metrics import PerformanceAnalyzer
+
+# Initialize analyzer
+analyzer = PerformanceAnalyzer(risk_free_rate=0.02, annualization_factor=252)
+
+# Generate comprehensive report
+report = analyzer.generate_report(
+    returns=returns_array,
+    equity_curve=equity_array,
+    total_commission=total_comm,
+    total_slippage=total_slip
+)
+
+# Display formatted report
+analyzer.print_report(report)
+
+# Access specific metrics
+print(f"Sharpe Ratio: {report.sharpe_ratio:.2f}")
+print(f"Sortino Ratio: {report.sortino_ratio:.2f}")
+print(f"Calmar Ratio: {report.calmar_ratio:.2f}")
+print(f"Max Drawdown: {report.max_drawdown:.2%}")
+print(f"Win Rate: {report.win_rate:.2%}")
+print(f"Profit Factor: {report.profit_factor:.2f}")
+```
+
+### Structured Logging
+
+```python
+from logger import setup_logger
+
+# Setup logger
+logger = setup_logger(
+    name="UltraTrader",
+    log_dir="logs",
+    level="INFO",
+    format_type="json"  # or "text"
+)
+
+# Log metrics
+logger.log_metric("sharpe_ratio", 1.85, step=1000)
+
+# Log training steps
+logger.log_training_step(step=1000, loss=0.045, metrics={"q_loss": 0.02})
+
+# Log risk alerts
+logger.log_risk_alert("drawdown", "Drawdown exceeded 15%", severity="WARNING")
+
+# Performance timing
+logger.start_timer("backtest")
+# ... run backtest ...
+elapsed = logger.stop_timer("backtest")
 ```
 
 ## 📊 Outputs
@@ -206,21 +394,31 @@ pytest --cov=. test_ultra.py
 
 ```
 UltraTrader/
+├── config/
+│   └── default_config.yaml           # Centralized configuration
 ├── ultra_trading_env.py              # Core environment + market simulator
 ├── ultra_advanced_trading_system.py  # Expert ensemble (30+ experts)
+├── config_manager.py                 # Configuration management system
+├── risk_manager.py                   # Advanced risk management (VaR, CVaR, Kelly)
+├── performance_metrics.py            # PM-grade analytics (Sharpe, Sortino, Calmar, IR)
+├── logger.py                         # Production-grade structured logging
 ├── train_ultra.py                    # SAC training script
 ├── eval_ultra.py                     # Single evaluation with risk metrics
 ├── seedeval.py                       # Multi-seed robustness analysis
 ├── test_ultra.py                     # Pytest unit tests
-├── requirements_ultra.txt            # Dependencies
+├── requirements_ultra.txt            # Production dependencies
+├── Dockerfile                        # Docker multi-stage build
+├── docker-compose.yml                # Docker Compose orchestration
+├── .dockerignore                     # Docker ignore patterns
 ├── CLAUDE.md                         # Development guide for Claude Code
-├── NEXT_TASK.md                      # Implementation specification
+├── README.md                         # This file
 ├── .gitignore                        # Git ignore rules
 ├── checkpoints/                      # Saved models
 │   ├── best/                        # Best model from evaluation
 │   └── periodic/                    # Periodic checkpoints
-├── logs/                            # Training logs
-└── reports/                         # Evaluation outputs (CSV, PNG)
+├── logs/                            # Training logs & structured logs
+├── reports/                         # Evaluation outputs (CSV, PNG)
+└── mlruns/                          # MLflow experiment tracking
 ```
 
 ## 🔬 Research Background
@@ -265,6 +463,33 @@ This project is provided as-is for research and educational purposes.
 
 ---
 
-**Status**: ✅ All tests passing (6/6) | Ready for training and evaluation
+## 🆕 What's New in v3.0
 
-**Version**: v2.0 Institutional Grade | Generated: 2025-10-27
+### Enterprise Infrastructure
+- **Configuration Management**: YAML-based configs with typed access and env overrides
+- **Advanced Risk Management**: VaR, CVaR, Kelly criterion position sizing
+- **Performance Metrics**: Sharpe, Sortino, Calmar, Information Ratio
+- **Production Logging**: JSON/text structured logs with rotation
+- **Docker Deployment**: Multi-stage builds with GPU support
+- **MLflow Integration**: Experiment tracking and model registry (planned)
+
+### Quantitative Features
+- **Risk Metrics**: Historical/parametric/Monte Carlo VaR at 95%/99%
+- **Position Sizing**: Kelly criterion, risk parity, dynamic adjustment
+- **Stop-Loss/Take-Profit**: Configurable risk controls
+- **Transaction Cost Analysis**: Detailed commission and slippage tracking
+- **Rolling Metrics**: Time-series risk and performance analysis
+
+### Development Tools
+- **Comprehensive Testing**: Extended test suite with coverage
+- **Docker Compose**: Orchestration for training, eval, MLflow, Tensorboard
+- **Type Hints**: Full type annotations for better IDE support
+- **Documentation**: Expanded README with usage examples
+
+---
+
+**Status**: ✅ All tests passing (6/6) | Production Ready
+
+**Version**: v3.0 Quantitative Organization Level | Generated: 2025-10-27
+
+**Maintainer**: mauveandromeda | [GitHub](https://github.com/MauveAndromeda/Niubility)

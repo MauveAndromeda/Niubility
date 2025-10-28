@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # Training service
+  ultratrader-train:
+    build:
+      context: .
+      target: runtime
+    container_name: ultratrader-train
+    volumes:
+      - ./checkpoints:/app/checkpoints
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+      - ./mlruns:/app/mlruns
+    environment:
+      - ULTRA_STEPS=100000
+      - ULTRA_SEED=123
+      - ULTRA_LOG_LEVEL=INFO
+    command: python train_ultra.py
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Evaluation service
+  ultratrader-eval:
+    build:
+      context: .
+      target: runtime
+    container_name: ultratrader-eval
+    volumes:
+      - ./checkpoints:/app/checkpoints
+      - ./reports:/app/reports
+    environment:
+      - ULTRA_LOG_LEVEL=INFO
+    command: python eval_ultra.py
+    depends_on:
+      - ultratrader-train
+
+  # Multi-seed evaluation
+  ultratrader-seedeval:
+    build:
+      context: .
+      target: runtime
+    container_name: ultratrader-seedeval
+    volumes:
+      - ./checkpoints:/app/checkpoints
+      - ./reports:/app/reports
+    command: python seedeval.py
+    depends_on:
+      - ultratrader-train
+
+  # MLflow tracking server (optional)
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.9.2
+    container_name: ultratrader-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlflow/mlruns
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri /mlflow/mlruns
+
+  # Tensorboard (optional)
+  tensorboard:
+    image: tensorflow/tensorflow:latest
+    container_name: ultratrader-tensorboard
+    ports:
+      - "6006:6006"
+    volumes:
+      - ./logs:/logs
+    command: tensorboard --logdir=/logs --host=0.0.0.0
+
+networks:
+  default:
+    name: ultratrader-network

@@ -1,22 +1,64 @@
-﻿torch
-numpy
-pandas
-scipy
-einops
-numba
-tqdm
-rich
-gymnasium
-stable-baselines3
-pandas-ta
-statsmodels
-scikit-learn
-networkx
-yfinance
-requests
-pyyaml
-matplotlib
-pytest
-pytest-cov
-transformers
-tensorboard
+﻿# requirements_ultra.txt
+#
+# UltraTrader - Institutional-Grade Quantitative Trading System
+# Production dependencies for training, evaluation, and deployment
+
+# === Core Math & Scientific Computing ===
+numpy>=1.24.0
+scipy>=1.10.0
+pandas>=2.0.0
+
+# === Deep Learning & RL ===
+torch>=2.0.0
+gymnasium==0.29.1
+stable-baselines3==2.3.2
+
+# === Visualization ===
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0
+
+# === Configuration Management ===
+pyyaml>=6.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+
+# === Logging & Monitoring ===
+tensorboard>=2.13.0
+mlflow>=2.9.0
+colorlog>=6.7.0
+
+# === Testing ===
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+
+# === Data Processing ===
+scikit-learn>=1.3.0
+statsmodels>=0.14.0
+
+# === Performance & Optimization ===
+numba>=0.57.0
+joblib>=1.3.0
+
+# === API & Web (optional for model serving) ===
+fastapi>=0.100.0
+uvicorn>=0.23.0
+pydantic>=2.0.0
+
+# === Database (optional for data storage) ===
+sqlalchemy>=2.0.0
+
+# === Development Tools ===
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.4.0
+isort>=5.12.0
+
+# === Documentation ===
+sphinx>=7.0.0
+sphinx-rtd-theme>=1.3.0
+
+# === Deployment ===
+docker>=6.1.0
+python-multipart>=0.0.6
